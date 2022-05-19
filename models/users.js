@@ -2,13 +2,26 @@ const bcryptjs = require("bcryptjs");
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const { Users } = require("../db/usersModel");
+const gravatar = require("gravatar");
 
 const register = async (body) => {
   const { email, password, subscription } = body;
+
+  const avatarURL = gravatar.url(
+    email,
+    {
+      s: "100",
+      r: "x",
+      d: "monsterid",
+    },
+    true
+  );
+
   const newUser = await Users.create({
     email,
     password: await bcryptjs.hash(password, +process.env.BCRYPTJS_SALT),
     subscription,
+    avatarURL,
   });
   return newUser;
 };
@@ -40,9 +53,18 @@ const currentUser = async (token) => {
   return user;
 };
 
+const updateAvatar = async (token) => {
+  const user = await Users.findOne(
+    { token },
+    { email: 1, subscription: 1, _id: 0 }
+  );
+  return user;
+};
+
 module.exports = {
   register,
   login,
   logout,
   currentUser,
+  updateAvatar,
 };
