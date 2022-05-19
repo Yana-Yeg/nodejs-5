@@ -74,6 +74,7 @@ module.exports = {
       password: Joi.string().required(),
       subscription: Joi.string().optional(),
       token: Joi.string().optional(),
+      avatarURL: Joi.string().optional(),
     });
 
     const validResult = schema.validate(req.body);
