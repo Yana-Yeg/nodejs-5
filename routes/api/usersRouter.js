@@ -1,4 +1,7 @@
 const express = require("express");
+const multer = require("multer");
+const mime = require("mime-types");
+const uuid = require("uuid");
 const router = express.Router();
 const {
   catchErrors,
@@ -6,18 +9,35 @@ const {
   forbidden,
 } = require("../../middlewares/catch-errors");
 
-const { register, login, logout, currentUser } = require("../../models/users");
+const {
+  register,
+  login,
+  logout,
+  currentUser,
+  avatarsUpdate,
+} = require("../../models/users");
 const { userRegLoginValidation } = require("../../middlewares/validMiddleware");
 const authorize = require("../../middlewares/authorization");
+
+const upload = multer({
+  storage: multer.diskStorage({
+    filename: (req, file, cb) => {
+      const extname = mime.extension(file.mimetype);
+      const filename = uuid.v4() + "." + extname;
+      cb(null, filename);
+    },
+    destination: "./tmp",
+  }),
+});
 
 router.post(
   "/signup",
   userRegLoginValidation,
   conflict(async (req, res) => {
-    const { email, subscription } = await register(req.body);
+    const { email, subscription, avatarURL } = await register(req.body);
     res.status(201).json({
       contentType: "application/json",
-      ResponseBody: { user: { email, subscription } },
+      ResponseBody: { user: { email, subscription, avatarURL } },
     });
   })
 );
@@ -58,6 +78,19 @@ router.get(
     res.status(200).json({
       contentType: "application/json",
       ResponseBody: { user },
+    });
+  })
+);
+
+router.patch(
+  "/avatars",
+  authorize,
+  upload.single("avatar"),
+  catchErrors(async (req, res, next) => {
+    const { avatarURL } = await avatarsUpdate(req.user.token, req.file);
+    res.status(200).json({
+      contentType: "application/json",
+      ResponseBody: { avatarURL },
     });
   })
 );
